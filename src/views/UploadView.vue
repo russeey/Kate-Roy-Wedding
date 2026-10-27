@@ -130,7 +130,7 @@ import { db } from '@/firebase/config'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 
 // ─── Replace with YOUR ImgBB API key ────────────────────────────
-const IMGBB_API_KEY = 'YOUR_IMGBB_API_KEY'
+const IMGBB_API_KEY = '1625bffbcaa3ffd31209bacb3d3c450c'
 // ────────────────────────────────────────────────────────────────
 
 const fileInput   = ref(null)
@@ -174,41 +174,59 @@ function removePhoto() {
 
 async function submitUpload() {
   if (!selectedFile.value) return
+
   uploading.value = true
-  errorMsg.value  = ''
+  errorMsg.value = ''
 
   try {
-    // 1. Upload to ImgBB
+    // 1. Upload image to ImgBB
     const formData = new FormData()
     formData.append('image', selectedFile.value)
     formData.append('key', IMGBB_API_KEY)
 
-    const imgbbRes  = await fetch('https://api.imgbb.com/1/upload', {
+    const imgbbRes = await fetch('https://api.imgbb.com/1/upload', {
       method: 'POST',
       body: formData
     })
+
     const imgbbData = await imgbbRes.json()
 
-    if (!imgbbData.success) throw new Error('Image upload failed. Please try again.')
+    if (!imgbbData.success) {
+      throw new Error('Image upload failed. Please try again.')
+    }
 
-    const imageUrl  = imgbbData.data.url
-    const thumbUrl  = imgbbData.data.thumb?.url || imageUrl
+    const imageUrl = imgbbData.data.url
+    const thumbUrl = imgbbData.data.thumb?.url || imageUrl
     const deleteUrl = imgbbData.data.delete_url || ''
+
+    // ADD THIS LOG
+    console.log('Saving to Firestore:', {
+      projectId: db.app.options.projectId,
+      imageUrl
+    })
 
     // 2. Save metadata to Firestore
     await addDoc(collection(db, 'memories'), {
       imageUrl,
       thumbUrl,
       deleteUrl,
-      caption:   caption.value.trim(),
+      caption: caption.value.trim(),
       guestName: guestName.value.trim() || 'A Beloved Guest',
       createdAt: serverTimestamp()
     })
 
-    successMsg.value = 'Your photo has been added to the wedding gallery. Thank you for celebrating with us!'
+    console.log('Firestore save successful!')
+
+    successMsg.value =
+      'Your photo has been added to the wedding gallery. Thank you for celebrating with us!'
+
   } catch (err) {
-    console.error(err)
+    console.error('Upload or Firestore error:', err)
+    console.error('Error code:', err.code)
+    console.error('Error message:', err.message)
+
     errorMsg.value = err.message || 'Something went wrong. Please try again.'
+
   } finally {
     uploading.value = false
   }
