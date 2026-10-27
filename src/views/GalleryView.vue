@@ -47,10 +47,11 @@
         >
           <div class="gallery-img-wrap">
             <img
-              :src="memory.thumbUrl || memory.imageUrl"
+              :src="memory.imageUrl"
               :alt="memory.caption || 'Wedding memory'"
               class="gallery-img"
               loading="lazy"
+              decoding="async"
             />
             <div class="gallery-overlay">
               <p v-if="memory.caption" class="overlay-caption">{{ memory.caption }}</p>
