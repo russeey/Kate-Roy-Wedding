@@ -86,8 +86,8 @@ function openScroll() {
   justify-content: center;
   padding: 40px 20px;
   background:
-    radial-gradient(ellipse at 20% 50%, #e3f1ea 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, #d9ece2 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 50%, #e8eee0 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, #dfe7d4 0%, transparent 60%),
     var(--cream);
   position: relative;
   z-index: 1;
@@ -106,7 +106,7 @@ function openScroll() {
   height: 28px;
   background:
     linear-gradient(180deg,
-      #2f9e7a 0%, #8fd3b6 30%, #2f9e7a 50%, #1c6b52 80%, #2f9e7a 100%);
+      #7f9670 0%, #b9c8ab 30%, #7f9670 50%, #566b4a 80%, #7f9670 100%);
   border-radius: 14px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 2px 4px rgba(255,255,255,0.3);
   position: relative;
@@ -134,25 +134,25 @@ function openScroll() {
       0deg,
       transparent,
       transparent 27px,
-      rgba(47,158,122,0.06) 28px
+      rgba(127,150,112,0.06) 28px
     ),
-    linear-gradient(160deg, #f7fcf9 0%, #e8f4ee 50%, #f3faf6 100%);
-  border-left: 3px solid var(--jade);
-  border-right: 3px solid var(--jade);
+    linear-gradient(160deg, #fafbf7 0%, #eef2e6 50%, #f6f8f1 100%);
+  border-left: 3px solid var(--sage);
+  border-right: 3px solid var(--sage);
   padding: 48px 52px;
   min-height: 200px;
   position: relative;
   overflow: hidden;
   box-shadow:
-    inset 4px 0 12px rgba(47,158,122,0.08),
-    inset -4px 0 12px rgba(47,158,122,0.08),
+    inset 4px 0 12px rgba(127,150,112,0.08),
+    inset -4px 0 12px rgba(127,150,112,0.08),
     0 8px 48px rgba(0,0,0,0.12);
 }
 .scroll-body::before {
   content: '';
   position: absolute;
   inset: 12px;
-  border: 1px solid rgba(47,158,122,0.2);
+  border: 1px solid rgba(127,150,112,0.2);
   pointer-events: none;
 }
 
@@ -160,7 +160,7 @@ function openScroll() {
 .seal {
   width: 100px;
   height: 100px;
-  background: radial-gradient(circle at 35% 35%, #2f9e7a, #0f4d3a);
+  background: radial-gradient(circle at 35% 35%, #7f9670, #3f5436);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -168,25 +168,25 @@ function openScroll() {
   margin: 20px auto 12px;
   cursor: pointer;
   box-shadow:
-    0 6px 24px rgba(15,77,58,0.35),
-    inset 0 2px 4px rgba(160,255,220,0.2);
+    0 6px 24px rgba(63,84,54,0.35),
+    inset 0 2px 4px rgba(225,240,210,0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
 }
 .seal:hover {
   transform: scale(1.06);
-  box-shadow: 0 10px 32px rgba(15,77,58,0.45), inset 0 2px 4px rgba(160,255,220,0.2);
+  box-shadow: 0 10px 32px rgba(63,84,54,0.45), inset 0 2px 4px rgba(225,240,210,0.2);
 }
 .seal-ring {
   position: absolute;
   inset: 6px;
   border-radius: 50%;
-  border: 2px solid rgba(200,255,235,0.3);
+  border: 2px solid rgba(230,242,220,0.3);
 }
 .seal-initials {
   font-family: var(--font-display);
   font-size: 1.3rem;
-  color: #e6fff5;
+  color: #f3f8ec;
   letter-spacing: 0.06em;
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
@@ -202,7 +202,7 @@ function openScroll() {
 }
 .hint-arrow {
   font-size: 1.4rem;
-  color: var(--jade);
+  color: var(--sage);
   animation: bounce 1.4s ease-in-out infinite;
 }
 @keyframes bounce {
@@ -224,7 +224,7 @@ function openScroll() {
   font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--jade-dark);
+  color: var(--sage-dark);
 }
 
 .letter-names {
@@ -237,7 +237,7 @@ function openScroll() {
 }
 .letter-names em {
   font-style: italic;
-  color: var(--jade-dark);
+  color: var(--sage-dark);
   font-family: var(--font-body);
   font-size: 0.9em;
 }
@@ -261,7 +261,7 @@ function openScroll() {
   font-family: var(--font-display);
   font-size: 1rem;
   letter-spacing: 0.08em;
-  color: var(--jade-dark);
+  color: var(--sage-dark);
 }
 
 .letter-actions {

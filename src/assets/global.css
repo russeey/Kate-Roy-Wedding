@@ -6,14 +6,14 @@
 }
 
 :root {
-  --cream:     #f5faf7;
-  --parchment: #e6f2ec;
-  --jade:      #2f9e7a;
-  --jade-light:#8fd3b6;
-  --jade-dark: #1c6b52;
-  --ink:       #12261f;
-  --ink-soft:  #44594f;
-  --blush:     #bfe0d0;
+  --cream:     #f6f8f3;
+  --parchment: #e9eee2;
+  --sage:      #7f9670;
+  --sage-light:#b9c8ab;
+  --sage-dark: #566b4a;
+  --ink:       #2b3326;
+  --ink-soft:  #5a6552;
+  --blush:     #d4dec8;
   --white:     #ffffff;
 
   --font-display: 'Cinzel', serif;
@@ -34,7 +34,7 @@ html, body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--parchment); }
-::-webkit-scrollbar-thumb { background: var(--jade); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--sage); border-radius: 3px; }
 
 /* Utility */
 .btn {
@@ -46,9 +46,9 @@ html, body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   padding: 14px 36px;
-  border: 1px solid var(--jade);
+  border: 1px solid var(--sage);
   background: transparent;
-  color: var(--jade-dark);
+  color: var(--sage-dark);
   cursor: pointer;
   transition: var(--transition);
   position: relative;
@@ -59,7 +59,7 @@ html, body {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--jade);
+  background: var(--sage);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--transition);
@@ -70,10 +70,10 @@ html, body {
 .btn span { position: relative; z-index: 1; }
 
 .btn-filled {
-  background: var(--jade);
+  background: var(--sage);
   color: var(--cream);
 }
-.btn-filled::before { background: var(--jade-dark); }
+.btn-filled::before { background: var(--sage-dark); }
 .btn-filled:hover { color: var(--cream); }
 
 /* Divider ornament */
@@ -81,7 +81,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 16px;
-  color: var(--jade);
+  color: var(--sage);
   font-size: 1.4rem;
 }
 .ornament::before,
@@ -89,5 +89,5 @@ html, body {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--jade), transparent);
+  background: linear-gradient(90deg, transparent, var(--sage), transparent);
 }

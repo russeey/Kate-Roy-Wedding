@@ -246,7 +246,7 @@ function resetForm() {
 .upload-page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse at 80% 0%, #e0f0e8 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 0%, #e6ede0 0%, transparent 55%),
     var(--cream);
   position: relative;
   z-index: 1;
@@ -258,7 +258,7 @@ function resetForm() {
   align-items: center;
   justify-content: space-between;
   padding: 20px 40px;
-  border-bottom: 1px solid rgba(47,158,122,0.2);
+  border-bottom: 1px solid rgba(127,150,112,0.2);
 }
 .nav-logo {
   font-family: var(--font-display);
@@ -267,7 +267,7 @@ function resetForm() {
   color: var(--ink);
   text-decoration: none;
 }
-.nav-logo em { font-family: var(--font-body); font-style: italic; color: var(--jade-dark); }
+.nav-logo em { font-family: var(--font-body); font-style: italic; color: var(--sage-dark); }
 .nav-link {
   font-family: var(--font-sans);
   font-size: 0.75rem;
@@ -277,7 +277,7 @@ function resetForm() {
   text-decoration: none;
   transition: color 0.3s;
 }
-.nav-link:hover { color: var(--jade-dark); }
+.nav-link:hover { color: var(--sage-dark); }
 
 /* Layout */
 .page-container {
@@ -296,7 +296,7 @@ function resetForm() {
   font-size: 0.7rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--jade-dark);
+  color: var(--sage-dark);
   margin-bottom: 10px;
 }
 .page-title {
@@ -317,7 +317,7 @@ function resetForm() {
 /* Card */
 .upload-card {
   background: var(--white);
-  border: 1px solid rgba(47,158,122,0.25);
+  border: 1px solid rgba(127,150,112,0.25);
   border-radius: 2px;
   padding: 40px 36px;
   box-shadow: 0 8px 48px rgba(0,0,0,0.06);
@@ -328,7 +328,7 @@ function resetForm() {
 
 /* Drop Zone */
 .drop-zone {
-  border: 2px dashed rgba(47,158,122,0.45);
+  border: 2px dashed rgba(127,150,112,0.45);
   border-radius: 2px;
   min-height: 220px;
   display: flex;
@@ -338,12 +338,12 @@ function resetForm() {
   transition: border-color 0.3s, background 0.3s;
   position: relative;
   overflow: hidden;
-  background: rgba(250,247,242,0.5);
+  background: rgba(246,248,243,0.5);
 }
 .drop-zone:hover,
 .drop-zone.active {
-  border-color: var(--jade);
-  background: rgba(47,158,122,0.05);
+  border-color: var(--sage);
+  background: rgba(127,150,112,0.05);
 }
 .drop-zone.hasPreview { cursor: default; }
 
@@ -367,7 +367,7 @@ function resetForm() {
   font-family: var(--font-sans);
   font-size: 0.68rem;
   letter-spacing: 0.15em;
-  color: var(--jade-dark);
+  color: var(--sage-dark);
   text-transform: uppercase;
 }
 
@@ -385,7 +385,7 @@ function resetForm() {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(8,30,22,0.65);
+  background: rgba(26,34,22,0.65);
   color: #fff;
   border: none;
   cursor: pointer;
@@ -419,7 +419,7 @@ function resetForm() {
   font-size: 1rem;
   color: var(--ink);
   background: var(--cream);
-  border: 1px solid rgba(47,158,122,0.3);
+  border: 1px solid rgba(127,150,112,0.3);
   border-radius: 2px;
   padding: 12px 16px;
   resize: none;
@@ -428,7 +428,7 @@ function resetForm() {
   width: 100%;
 }
 .field-textarea:focus,
-.field-input:focus { border-color: var(--jade); }
+.field-input:focus { border-color: var(--sage); }
 .char-count {
   font-family: var(--font-sans);
   font-size: 0.7rem;
@@ -459,8 +459,8 @@ function resetForm() {
 /* Banners */
 .success-banner {
   margin-top: 32px;
-  background: linear-gradient(135deg, #f7fcf9, #e8f4ee);
-  border: 1px solid var(--jade);
+  background: linear-gradient(135deg, #fafbf7, #eef2e6);
+  border: 1px solid var(--sage);
   border-radius: 2px;
   padding: 28px 32px;
   display: flex;

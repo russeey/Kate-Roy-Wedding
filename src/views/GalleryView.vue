@@ -150,7 +150,7 @@ function formatDate(ts) {
 .gallery-page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse at 10% 90%, #e3f1ea 0%, transparent 55%),
+    radial-gradient(ellipse at 10% 90%, #e8eee0 0%, transparent 55%),
     var(--cream);
   position: relative;
   z-index: 1;
@@ -162,7 +162,7 @@ function formatDate(ts) {
   align-items: center;
   justify-content: space-between;
   padding: 20px 40px;
-  border-bottom: 1px solid rgba(47,158,122,0.2);
+  border-bottom: 1px solid rgba(127,150,112,0.2);
 }
 .nav-logo {
   font-family: var(--font-display);
@@ -171,7 +171,7 @@ function formatDate(ts) {
   color: var(--ink);
   text-decoration: none;
 }
-.nav-logo em { font-family: var(--font-body); font-style: italic; color: var(--jade-dark); }
+.nav-logo em { font-family: var(--font-body); font-style: italic; color: var(--sage-dark); }
 
 /* Layout */
 .page-container {
@@ -190,7 +190,7 @@ function formatDate(ts) {
   font-size: 0.7rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--jade-dark);
+  color: var(--sage-dark);
   margin-bottom: 10px;
 }
 .page-title {
@@ -223,8 +223,8 @@ function formatDate(ts) {
 .loading-spinner {
   width: 44px;
   height: 44px;
-  border: 3px solid rgba(47,158,122,0.25);
-  border-top-color: var(--jade);
+  border: 3px solid rgba(127,150,112,0.25);
+  border-top-color: var(--sage);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
@@ -275,7 +275,7 @@ function formatDate(ts) {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, rgba(8,30,22,0.85));
+  background: linear-gradient(transparent, rgba(26,34,22,0.85));
   padding: 40px 16px 16px;
   transform: translateY(100%);
   transition: transform 0.4s ease;
@@ -298,14 +298,14 @@ function formatDate(ts) {
   font-family: var(--font-sans);
   font-size: 0.7rem;
   letter-spacing: 0.1em;
-  color: var(--jade-light);
+  color: var(--sage-light);
 }
 
 /* ── Lightbox ── */
 .lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(6, 22, 16, 0.93);
+  background: rgba(22, 30, 18, 0.93);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -384,7 +384,7 @@ function formatDate(ts) {
   font-size: 0.75rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--jade-light);
+  color: var(--sage-light);
   margin-bottom: 6px;
 }
 .lightbox-date {
