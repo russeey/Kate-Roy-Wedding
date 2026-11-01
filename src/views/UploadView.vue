@@ -18,59 +18,101 @@
         <h2 class="page-title">Capture the Magic</h2>
         <div class="ornament"><span>✦</span></div>
         <p class="page-subtitle">
-          Upload your photos from today and add a heartfelt caption.
+          Upload up to {{ MAX_FILES }} photos at once and add a caption to each.
           Every image will be added to Kate &amp; Roy's wedding gallery.
         </p>
       </header>
 
       <!-- Upload Card -->
-      <div class="upload-card">
+      <div v-if="!successMsg" class="upload-card">
 
-        <!-- Drop Zone -->
+        <!-- Hidden multi-file input -->
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          multiple
+          class="hidden-input"
+          @change="handleFileChange"
+        />
+
+        <!-- Drop Zone (when no photos selected yet) -->
         <div
+          v-if="!items.length"
           class="drop-zone"
-          :class="{ active: isDragging, hasPreview: previewUrl }"
+          :class="{ active: isDragging }"
           @dragover.prevent="isDragging = true"
           @dragleave="isDragging = false"
           @drop.prevent="handleDrop"
-          @click="triggerFileInput"
+          @click="fileInput.click()"
         >
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/*"
-            class="hidden-input"
-            @change="handleFileChange"
-          />
-
-          <div v-if="!previewUrl" class="drop-placeholder">
-            <div class="drop-icon">🌸</div>
-            <p class="drop-main">Drop your photo here</p>
-            <p class="drop-sub">or tap to browse your device</p>
+          <div class="drop-placeholder">
+            <div class="drop-icon">🌿</div>
+            <p class="drop-main">Drop your photos here</p>
+            <p class="drop-sub">or tap to choose one or many from your device</p>
             <p class="drop-formats">JPG · PNG · WEBP · HEIC</p>
           </div>
+        </div>
 
-          <div v-else class="preview-wrap">
-            <img :src="previewUrl" alt="Preview" class="preview-img" />
-            <button class="remove-btn" @click.stop="removePhoto">✕</button>
+        <!-- Selected photos -->
+        <div
+          v-else
+          class="photo-list"
+          @dragover.prevent="isDragging = true"
+          @dragleave="isDragging = false"
+          @drop.prevent="handleDrop"
+        >
+          <div
+            v-for="item in items"
+            :key="item.id"
+            class="photo-item"
+            :class="item.status"
+          >
+            <div class="photo-thumb">
+              <img :src="item.preview" alt="Selected photo" />
+
+              <!-- Status overlay -->
+              <div v-if="item.status === 'uploading'" class="photo-overlay">
+                <span class="spinner dark" />
+              </div>
+              <div v-else-if="item.status === 'done'" class="photo-overlay done">✓</div>
+              <div v-else-if="item.status === 'error'" class="photo-overlay failed">!</div>
+
+              <button
+                v-if="!uploading && item.status !== 'done'"
+                class="remove-btn"
+                @click="removeItem(item.id)"
+                aria-label="Remove photo"
+              >✕</button>
+            </div>
+
+            <div class="photo-fields">
+              <textarea
+                v-model="item.caption"
+                class="field-textarea"
+                placeholder="Add a caption for this photo…"
+                maxlength="280"
+                rows="2"
+                :disabled="uploading || item.status === 'done'"
+              />
+              <span class="char-count">{{ item.caption.length }} / 280</span>
+              <p v-if="item.status === 'error'" class="item-error">{{ item.error }}</p>
+            </div>
           </div>
+
+          <!-- Add more -->
+          <button
+            v-if="items.length < MAX_FILES && !uploading"
+            class="add-more"
+            :class="{ active: isDragging }"
+            @click="fileInput.click()"
+          >
+            <span class="add-plus">＋</span>
+            <span>Add more photos ({{ items.length }} / {{ MAX_FILES }})</span>
+          </button>
         </div>
 
-        <!-- Caption Input -->
-        <div class="field-group">
-          <label class="field-label" for="caption">Your Caption</label>
-          <textarea
-            id="caption"
-            v-model="caption"
-            class="field-textarea"
-            placeholder="Write a message, a wish, or a memory for Kate & Roy…"
-            maxlength="280"
-            rows="4"
-          />
-          <span class="char-count">{{ caption.length }} / 280</span>
-        </div>
-
-        <!-- Guest name (optional) -->
+        <!-- Guest name (shared by all photos) -->
         <div class="field-group">
           <label class="field-label" for="guestName">Your Name <small>(optional)</small></label>
           <input
@@ -80,33 +122,41 @@
             class="field-input"
             placeholder="e.g. Maria Santos"
             maxlength="60"
+            :disabled="uploading"
           />
         </div>
 
         <!-- Submit -->
         <button
           class="btn btn-filled submit-btn"
-          :disabled="!selectedFile || uploading"
+          :disabled="!canSubmit"
           @click="submitUpload"
         >
-          <span v-if="!uploading">💌 &nbsp;Share Memory</span>
+          <span v-if="!uploading">
+            💌 &nbsp;Share {{ pendingCount }} Memor{{ pendingCount === 1 ? 'y' : 'ies' }}
+          </span>
           <span v-else class="uploading-label">
-            <span class="spinner" /> Uploading…
+            <span class="spinner" /> Uploading {{ doneCount + 1 }} of {{ totalToUpload }}…
           </span>
         </button>
+
+        <!-- Progress bar -->
+        <div v-if="uploading" class="progress-track">
+          <div class="progress-bar" :style="{ width: progressPercent + '%' }" />
+        </div>
 
       </div>
 
       <!-- Success message -->
       <transition name="pop">
         <div v-if="successMsg" class="success-banner">
-          <span class="success-icon">🌹</span>
+          <span class="success-icon">🌿</span>
           <div>
-            <p class="success-title">Memory Shared!</p>
+            <p class="success-title">Memories Shared!</p>
             <p class="success-body">{{ successMsg }}</p>
           </div>
           <div class="success-actions">
-            <button class="btn" @click="resetForm"><span>Upload Another</span></button>
+            <button class="btn" @click="resetForm"><span>Upload More</span></button>
             <router-link to="/gallery" class="btn btn-filled"><span>View Gallery</span></router-link>
           </div>
         </div>
@@ -125,7 +175,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { db } from '@/firebase/config'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 
@@ -133,113 +183,154 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 const IMGBB_API_KEY = '1625bffbcaa3ffd31209bacb3d3c450c'
 // ────────────────────────────────────────────────────────────────
 
-const fileInput   = ref(null)
-const selectedFile = ref(null)
-const previewUrl   = ref('')
-const caption      = ref('')
-const guestName    = ref('')
-const isDragging   = ref(false)
-const uploading    = ref(false)
-const successMsg   = ref('')
-const errorMsg     = ref('')
+const MAX_FILES = 10
 
-function triggerFileInput() {
-  if (previewUrl.value) return
-  fileInput.value.click()
+const fileInput   = ref(null)
+const items       = ref([])      // { id, file, preview, caption, status, error }
+const guestName   = ref('')
+const isDragging  = ref(false)
+const uploading   = ref(false)
+const doneCount   = ref(0)
+const totalToUpload = ref(0)
+const successMsg  = ref('')
+const errorMsg    = ref('')
+
+const pendingCount = computed(() => items.value.filter(i => i.status !== 'done').length)
+const canSubmit = computed(() => !uploading.value && pendingCount.value > 0)
+const progressPercent = computed(() =>
+  totalToUpload.value ? Math.round((doneCount.value / totalToUpload.value) * 100) : 0
+)
+
+function addFiles(fileList) {
+  const images = Array.from(fileList).filter(f => f.type.startsWith('image/'))
+  const room = MAX_FILES - items.value.length
+
+  if (images.length > room) {
+    errorMsg.value = `You can upload up to ${MAX_FILES} photos at once.`
+  }
+
+  images.slice(0, room).forEach(file => {
+    items.value.push({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      file,
+      preview: URL.createObjectURL(file),
+      caption: '',
+      status: 'pending',
+      error: ''
+    })
+  })
 }
 
 function handleFileChange(e) {
-  const file = e.target.files[0]
-  if (file) loadFile(file)
+  errorMsg.value = ''
+  addFiles(e.target.files)
+  e.target.value = '' // lets the same file be picked again
 }
 
 function handleDrop(e) {
   isDragging.value = false
-  const file = e.dataTransfer.files[0]
-  if (file && file.type.startsWith('image/')) loadFile(file)
+  errorMsg.value = ''
+  addFiles(e.dataTransfer.files)
 }
 
-function loadFile(file) {
-  selectedFile.value = file
-  const reader = new FileReader()
-  reader.onload = (e) => { previewUrl.value = e.target.result }
-  reader.readAsDataURL(file)
+function removeItem(id) {
+  const item = items.value.find(i => i.id === id)
+  if (item) URL.revokeObjectURL(item.preview)
+  items.value = items.value.filter(i => i.id !== id)
 }
 
-function removePhoto() {
-  selectedFile.value = null
-  previewUrl.value   = ''
-  fileInput.value.value = ''
+async function uploadOne(item) {
+  // 1. Upload image to ImgBB
+  const formData = new FormData()
+  formData.append('image', item.file)
+  formData.append('key', IMGBB_API_KEY)
+
+  const imgbbRes = await fetch('https://api.imgbb.com/1/upload', {
+    method: 'POST',
+    body: formData
+  })
+
+  const imgbbData = await imgbbRes.json()
+
+  if (!imgbbData.success) {
+    throw new Error('Image upload failed. Please try again.')
+  }
+
+  const imageUrl  = imgbbData.data.url
+  const thumbUrl  = imgbbData.data.thumb?.url || imageUrl
+  const deleteUrl = imgbbData.data.delete_url || ''
+
+  console.log('Saving to Firestore:', {
+    projectId: db.app.options.projectId,
+    imageUrl
+  })
+
+  // 2. Save metadata to Firestore
+  await addDoc(collection(db, 'memories'), {
+    imageUrl,
+    thumbUrl,
+    deleteUrl,
+    caption: item.caption.trim(),
+    guestName: guestName.value.trim() || 'A Beloved Guest',
+    createdAt: serverTimestamp()
+  })
+
+  console.log('Firestore save successful!')
 }
 
 async function submitUpload() {
-  if (!selectedFile.value) return
+  const queue = items.value.filter(i => i.status !== 'done')
+  if (!queue.length) return
 
   uploading.value = true
   errorMsg.value = ''
+  doneCount.value = 0
+  totalToUpload.value = queue.length
 
-  try {
-    // 1. Upload image to ImgBB
-    const formData = new FormData()
-    formData.append('image', selectedFile.value)
-    formData.append('key', IMGBB_API_KEY)
-
-    const imgbbRes = await fetch('https://api.imgbb.com/1/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const imgbbData = await imgbbRes.json()
-
-    if (!imgbbData.success) {
-      throw new Error('Image upload failed. Please try again.')
+  // One at a time keeps ImgBB happy and works well on mobile data
+  for (const item of queue) {
+    item.status = 'uploading'
+    item.error = ''
+    try {
+      await uploadOne(item)
+      item.status = 'done'
+      doneCount.value++
+    } catch (err) {
+      console.error('Upload or Firestore error:', err)
+      console.error('Error code:', err.code)
+      console.error('Error message:', err.message)
+      item.status = 'error'
+      item.error = err.message || 'Something went wrong.'
     }
+  }
 
-    const imageUrl = imgbbData.data.url
-    const thumbUrl = imgbbData.data.thumb?.url || imageUrl
-    const deleteUrl = imgbbData.data.delete_url || ''
+  uploading.value = false
 
-    // ADD THIS LOG
-    console.log('Saving to Firestore:', {
-      projectId: db.app.options.projectId,
-      imageUrl
-    })
-
-    // 2. Save metadata to Firestore
-    await addDoc(collection(db, 'memories'), {
-      imageUrl,
-      thumbUrl,
-      deleteUrl,
-      caption: caption.value.trim(),
-      guestName: guestName.value.trim() || 'A Beloved Guest',
-      createdAt: serverTimestamp()
-    })
-
-    console.log('Firestore save successful!')
-
+  const failed = items.value.filter(i => i.status === 'error').length
+  if (failed === 0) {
     successMsg.value =
-      'Your photo has been added to the wedding gallery. Thank you for celebrating with us!'
-
-  } catch (err) {
-    console.error('Upload or Firestore error:', err)
-    console.error('Error code:', err.code)
-    console.error('Error message:', err.message)
-
-    errorMsg.value = err.message || 'Something went wrong. Please try again.'
-
-  } finally {
-    uploading.value = false
+      doneCount.value === 1
+        ? 'Your photo has been added to the wedding gallery. Thank you for celebrating with us!'
+        : `Your ${doneCount.value} photos have been added to the wedding gallery. Thank you for celebrating with us!`
+  } else {
+    errorMsg.value =
+      `${failed} photo${failed > 1 ? 's' : ''} didn't upload. Tap the Share button to try again.`
   }
 }
 
 function resetForm() {
-  selectedFile.value = null
-  previewUrl.value   = ''
-  caption.value      = ''
-  guestName.value    = ''
-  successMsg.value   = ''
-  if (fileInput.value) fileInput.value.value = ''
+  items.value.forEach(i => URL.revokeObjectURL(i.preview))
+  items.value = []
+  guestName.value = ''
+  successMsg.value = ''
+  errorMsg.value = ''
+  doneCount.value = 0
+  totalToUpload.value = 0
 }
+
+onBeforeUnmount(() => {
+  items.value.forEach(i => URL.revokeObjectURL(i.preview))
+})
 </script>
 
 <style scoped>
@@ -326,6 +417,8 @@ function resetForm() {
   gap: 28px;
 }
 
+.hidden-input { display: none; }
+
 /* Drop Zone */
 .drop-zone {
   border: 2px dashed rgba(127,150,112,0.45);
@@ -336,18 +429,13 @@ function resetForm() {
   justify-content: center;
   cursor: pointer;
   transition: border-color 0.3s, background 0.3s;
-  position: relative;
-  overflow: hidden;
   background: rgba(246,248,243,0.5);
 }
 .drop-zone:hover,
 .drop-zone.active {
   border-color: var(--sage);
-  background: rgba(127,150,112,0.05);
+  background: rgba(127,150,112,0.06);
 }
-.drop-zone.hasPreview { cursor: default; }
-
-.hidden-input { display: none; }
 
 .drop-placeholder { text-align: center; padding: 20px; }
 .drop-icon { font-size: 2.8rem; margin-bottom: 12px; }
@@ -371,31 +459,103 @@ function resetForm() {
   text-transform: uppercase;
 }
 
-.preview-wrap { width: 100%; height: 100%; position: relative; min-height: 220px; }
-.preview-img {
+/* Photo list */
+.photo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.photo-item {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(127,150,112,0.18);
+  transition: opacity 0.3s;
+}
+.photo-item.done { opacity: 0.65; }
+.photo-item.error .photo-thumb { outline: 2px solid #d9a3a3; }
+
+.photo-thumb {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--parchment);
+}
+.photo-thumb img {
   width: 100%;
-  height: 280px;
+  height: 100%;
   object-fit: cover;
   display: block;
 }
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(246,248,243,0.7);
+  font-size: 1.8rem;
+}
+.photo-overlay.done   { background: rgba(127,150,112,0.75); color: #fff; }
+.photo-overlay.failed { background: rgba(160,60,60,0.75);   color: #fff; font-family: var(--font-display); }
+
 .remove-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: rgba(26,34,22,0.65);
   color: #fff;
   border: none;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
 }
 .remove-btn:hover { background: rgba(0,0,0,0.85); }
+
+.photo-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.item-error {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: #8b2222;
+}
+
+.add-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px;
+  border: 2px dashed rgba(127,150,112,0.45);
+  background: rgba(246,248,243,0.5);
+  color: var(--sage-dark);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s;
+}
+.add-more:hover,
+.add-more.active {
+  border-color: var(--sage);
+  background: rgba(127,150,112,0.08);
+}
+.add-plus { font-size: 1.3rem; line-height: 1; }
 
 /* Fields */
 .field-group { display: flex; flex-direction: column; gap: 8px; }
@@ -421,7 +581,7 @@ function resetForm() {
   background: var(--cream);
   border: 1px solid rgba(127,150,112,0.3);
   border-radius: 2px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   resize: none;
   transition: border-color 0.3s;
   outline: none;
@@ -429,6 +589,8 @@ function resetForm() {
 }
 .field-textarea:focus,
 .field-input:focus { border-color: var(--sage); }
+.field-textarea:disabled,
+.field-input:disabled { opacity: 0.6; }
 .char-count {
   font-family: var(--font-sans);
   font-size: 0.7rem;
@@ -454,7 +616,27 @@ function resetForm() {
   animation: spin 0.7s linear infinite;
   display: inline-block;
 }
+.spinner.dark {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(127,150,112,0.3);
+  border-top-color: var(--sage-dark);
+}
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Progress */
+.progress-track {
+  height: 4px;
+  background: rgba(127,150,112,0.18);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: -12px;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--sage);
+  transition: width 0.4s ease;
+}
 
 /* Banners */
 .success-banner {
@@ -510,4 +692,12 @@ function resetForm() {
 /* Transitions */
 .pop-enter-active { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1); }
 .pop-enter-from   { opacity: 0; transform: scale(0.94) translateY(10px); }
+
+/* Mobile */
+@media (max-width: 520px) {
+  .upload-card { padding: 28px 20px; }
+  .photo-item { flex-direction: column; }
+  .photo-thumb { width: 100%; height: 200px; }
+  .top-nav { padding: 16px 20px; }
+}
 </style>
