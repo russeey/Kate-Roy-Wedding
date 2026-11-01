@@ -112,6 +112,28 @@
           </button>
         </div>
 
+        <!-- Album option (only when 2+ photos) -->
+        <div v-if="items.length > 1" class="album-box">
+          <label class="toggle">
+            <input type="checkbox" v-model="makeAlbum" :disabled="uploading || !!albumId" />
+            <span class="toggle-box" />
+            <span class="toggle-text">Put these photos in an album</span>
+          </label>
+
+          <div v-if="makeAlbum" class="field-group album-name">
+            <label class="field-label" for="albumTitle">Album Name</label>
+            <input
+              id="albumTitle"
+              v-model="albumTitle"
+              type="text"
+              class="field-input"
+              placeholder="e.g. Dance Floor Moments"
+              maxlength="60"
+              :disabled="uploading || !!albumId"
+            />
+          </div>
+        </div>
+
         <!-- Guest name (shared by all photos) -->
         <div class="field-group">
           <label class="field-label" for="guestName">Your Name <small>(optional)</small></label>
@@ -194,9 +216,17 @@ const doneCount   = ref(0)
 const totalToUpload = ref(0)
 const successMsg  = ref('')
 const errorMsg    = ref('')
+const makeAlbum   = ref(false)
+const albumTitle  = ref('')
+const albumId     = ref('')
 
 const pendingCount = computed(() => items.value.filter(i => i.status !== 'done').length)
-const canSubmit = computed(() => !uploading.value && pendingCount.value > 0)
+const useAlbum = computed(() => makeAlbum.value && items.value.length > 1)
+const canSubmit = computed(() =>
+  !uploading.value &&
+  pendingCount.value > 0 &&
+  (!useAlbum.value || albumTitle.value.trim().length > 0)
+)
 const progressPercent = computed(() =>
   totalToUpload.value ? Math.round((doneCount.value / totalToUpload.value) * 100) : 0
 )
@@ -272,6 +302,7 @@ async function uploadOne(item) {
     deleteUrl,
     caption: item.caption.trim(),
     guestName: guestName.value.trim() || 'A Beloved Guest',
+    albumId: albumId.value || null,
     createdAt: serverTimestamp()
   })
 
@@ -286,6 +317,23 @@ async function submitUpload() {
   errorMsg.value = ''
   doneCount.value = 0
   totalToUpload.value = queue.length
+
+  // Create the album first (only once, even if the guest retries)
+  if (useAlbum.value && !albumId.value) {
+    try {
+      const albumRef = await addDoc(collection(db, 'albums'), {
+        title: albumTitle.value.trim(),
+        guestName: guestName.value.trim() || 'A Beloved Guest',
+        createdAt: serverTimestamp()
+      })
+      albumId.value = albumRef.id
+    } catch (err) {
+      console.error('Could not create album:', err)
+      errorMsg.value = 'Could not create the album. Please try again.'
+      uploading.value = false
+      return
+    }
+  }
 
   // One at a time keeps ImgBB happy and works well on mobile data
   for (const item of queue) {
@@ -308,8 +356,9 @@ async function submitUpload() {
 
   const failed = items.value.filter(i => i.status === 'error').length
   if (failed === 0) {
-    successMsg.value =
-      doneCount.value === 1
+    successMsg.value = albumId.value
+      ? `Your album "${albumTitle.value.trim()}" has been added to the wedding gallery. Thank you for celebrating with us!`
+      : doneCount.value === 1
         ? 'Your photo has been added to the wedding gallery. Thank you for celebrating with us!'
         : `Your ${doneCount.value} photos have been added to the wedding gallery. Thank you for celebrating with us!`
   } else {
@@ -322,6 +371,9 @@ function resetForm() {
   items.value.forEach(i => URL.revokeObjectURL(i.preview))
   items.value = []
   guestName.value = ''
+  makeAlbum.value = false
+  albumTitle.value = ''
+  albumId.value = ''
   successMsg.value = ''
   errorMsg.value = ''
   doneCount.value = 0
@@ -596,6 +648,53 @@ onBeforeUnmount(() => {
   font-size: 0.7rem;
   color: var(--ink-soft);
   align-self: flex-end;
+}
+
+/* Album option */
+.album-box {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px;
+  background: rgba(127,150,112,0.07);
+  border: 1px solid rgba(127,150,112,0.25);
+  border-radius: 2px;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle-box {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--sage);
+  border-radius: 2px;
+  background: var(--white);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.toggle input:checked + .toggle-box { background: var(--sage); }
+.toggle input:checked + .toggle-box::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.toggle input:focus-visible + .toggle-box { outline: 2px solid var(--sage-dark); outline-offset: 2px; }
+.toggle input:disabled + .toggle-box { opacity: 0.55; }
+.toggle-text {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--ink);
 }
 
 /* Submit */

@@ -29,37 +29,74 @@
       </div>
 
       <!-- Empty state -->
-      <div v-else-if="!memories.length" class="empty-state">
-        <div class="empty-icon">🌸</div>
+      <div v-else-if="!albums.length && !singles.length" class="empty-state">
+        <div class="empty-icon">🌿</div>
         <h3>No memories yet</h3>
         <p>Be the first to share a photo from Kate &amp; Roy's special day!</p>
         <router-link to="/upload" class="btn btn-filled"><span>Share a Memory</span></router-link>
       </div>
 
-      <!-- Gallery Grid -->
-      <div v-else class="gallery-grid">
-        <div
-          v-for="(memory, index) in memories"
-          :key="memory.id"
-          class="gallery-item"
-          :style="{ animationDelay: (index * 0.07) + 's' }"
-          @click="openLightbox(memory)"
-        >
-          <div class="gallery-img-wrap">
-            <img
-              :src="memory.imageUrl"
-              :alt="memory.caption || 'Wedding memory'"
-              class="gallery-img"
-              loading="lazy"
-              decoding="async"
-            />
-            <div class="gallery-overlay">
-              <p v-if="memory.caption" class="overlay-caption">{{ memory.caption }}</p>
-              <p class="overlay-guest">— {{ memory.guestName }}</p>
+      <template v-else>
+
+        <!-- Albums -->
+        <section v-if="albums.length" class="section">
+          <h3 class="section-title">Albums</h3>
+          <div class="album-grid">
+            <router-link
+              v-for="(album, index) in albums"
+              :key="album.id"
+              :to="`/album/${album.id}`"
+              class="album-card"
+              :style="{ animationDelay: (index * 0.07) + 's' }"
+            >
+              <div class="album-stack">
+                <img
+                  :src="album.coverUrl"
+                  :alt="album.title"
+                  class="album-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="album-info">
+                <p class="album-title">{{ album.title }}</p>
+                <p class="album-meta">
+                  {{ album.count }} photo{{ album.count !== 1 ? 's' : '' }} · {{ album.guestName }}
+                </p>
+              </div>
+            </router-link>
+          </div>
+        </section>
+
+        <!-- Single photos -->
+        <section v-if="singles.length" class="section">
+          <h3 v-if="albums.length" class="section-title">Photos</h3>
+          <div class="gallery-grid">
+            <div
+              v-for="(memory, index) in singles"
+              :key="memory.id"
+              class="gallery-item"
+              :style="{ animationDelay: (index * 0.07) + 's' }"
+              @click="openLightbox(memory)"
+            >
+              <div class="gallery-img-wrap">
+                <img
+                  :src="memory.imageUrl"
+                  :alt="memory.caption || 'Wedding memory'"
+                  class="gallery-img"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div class="gallery-overlay">
+                  <p v-if="memory.caption" class="overlay-caption">{{ memory.caption }}</p>
+                  <p class="overlay-guest">— {{ memory.guestName }}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+
+      </template>
 
     </div>
 
@@ -75,7 +112,7 @@
           @click.stop="navigateLightbox(-1)"
         >‹</button>
         <button
-          v-if="lightboxIndex < memories.length - 1"
+          v-if="lightboxIndex < singles.length - 1"
           class="lightbox-nav next"
           @click.stop="navigateLightbox(1)"
         >›</button>
@@ -101,20 +138,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { db } from '@/firebase/config'
 import { collection, getDocs, orderBy, query } from 'firebase/firestore'
 
-const memories       = ref([])
+const memories       = ref([])   // every photo (singles + album photos)
+const albums         = ref([])
 const loading        = ref(true)
 const lightboxMemory = ref(null)
 const lightboxIndex  = ref(0)
+
+// Photos that are NOT part of an album
+const singles = computed(() => memories.value.filter(m => !m.albumId))
 
 onMounted(async () => {
   try {
     const q    = query(collection(db, 'memories'), orderBy('createdAt', 'desc'))
     const snap = await getDocs(q)
     memories.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+    // Group album photos so we can show a count + cover
+    const byAlbum = {}
+    memories.value.forEach(m => {
+      if (m.albumId) (byAlbum[m.albumId] ||= []).push(m)
+    })
+
+    const albumSnap = await getDocs(
+      query(collection(db, 'albums'), orderBy('createdAt', 'desc'))
+    )
+    albums.value = albumSnap.docs
+      .map(d => {
+        const photos = byAlbum[d.id] || []
+        // memories are newest-first, so the last one is the first uploaded
+        const cover = photos[photos.length - 1]
+        return { id: d.id, ...d.data(), count: photos.length, coverUrl: cover?.imageUrl }
+      })
+      .filter(a => a.count > 0)
   } catch (err) {
     console.error('Failed to load memories:', err)
   } finally {
@@ -123,7 +182,7 @@ onMounted(async () => {
 })
 
 function openLightbox(memory) {
-  lightboxIndex.value  = memories.value.findIndex(m => m.id === memory.id)
+  lightboxIndex.value  = singles.value.findIndex(m => m.id === memory.id)
   lightboxMemory.value = memory
   document.body.style.overflow = 'hidden'
 }
@@ -133,9 +192,9 @@ function closeLightbox() {
 }
 function navigateLightbox(dir) {
   const newIdx = lightboxIndex.value + dir
-  if (newIdx >= 0 && newIdx < memories.value.length) {
+  if (newIdx >= 0 && newIdx < singles.value.length) {
     lightboxIndex.value  = newIdx
-    lightboxMemory.value = memories.value[newIdx]
+    lightboxMemory.value = singles.value[newIdx]
   }
 }
 
@@ -299,6 +358,89 @@ function formatDate(ts) {
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   color: var(--sage-light);
+}
+
+/* Sections */
+.section { margin-bottom: 56px; }
+.section-title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--sage-dark);
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(127,150,112,0.5), transparent);
+}
+
+/* Album cards */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 28px;
+}
+.album-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  animation: fadeUp 0.6s ease both;
+}
+.album-stack {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  margin: 0 8px 12px 0;
+}
+/* two "sheets" peeking out behind the cover = looks like a stack */
+.album-stack::before,
+.album-stack::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--white);
+  border: 1px solid rgba(127,150,112,0.3);
+  border-radius: 2px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  transition: transform 0.4s ease;
+}
+.album-stack::before { transform: translate(8px, 8px) rotate(2deg); }
+.album-stack::after  { transform: translate(4px, 4px) rotate(1deg); }
+.album-card:hover .album-stack::before { transform: translate(12px, 10px) rotate(3.5deg); }
+.album-card:hover .album-stack::after  { transform: translate(6px, 5px) rotate(1.8deg); }
+
+.album-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+  z-index: 2;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  transition: transform 0.4s ease;
+}
+.album-card:hover .album-cover { transform: translateY(-3px); }
+
+.album-info { padding-top: 4px; }
+.album-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.album-meta {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
 }
 
 /* ── Lightbox ── */

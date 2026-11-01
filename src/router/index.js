@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import WelcomeView from '@/views/WelcomeView.vue'
 import UploadView from '@/views/UploadView.vue'
 import GalleryView from '@/views/GalleryView.vue'
+import AlbumView from '@/views/AlbumView.vue'
 
 const routes = [
   {
@@ -19,6 +20,11 @@ const routes = [
     path: '/gallery',
     name: 'Gallery',
     component: GalleryView
+  },
+  {
+    path: '/album/:id',
+    name: 'Album',
+    component: AlbumView
   }
 ]
 
