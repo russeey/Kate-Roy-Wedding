@@ -794,9 +794,25 @@ onBeforeUnmount(() => {
 
 /* Mobile */
 @media (max-width: 520px) {
-  .upload-card { padding: 28px 20px; }
-  .photo-item { flex-direction: column; }
-  .photo-thumb { width: 100%; height: 200px; }
-  .top-nav { padding: 16px 20px; }
+  .top-nav { padding: 14px 18px; }
+  .nav-logo { font-size: 0.95rem; }
+  .page-container { padding: 28px 16px 56px; }
+  .page-header { margin-bottom: 28px; }
+  .page-subtitle { font-size: 1rem; line-height: 1.7; }
+
+  .upload-card { padding: 22px 16px; gap: 22px; }
+  .drop-zone { min-height: 180px; }
+
+  /* keep the same row layout as desktop, just a smaller thumbnail */
+  .photo-item { gap: 12px; }
+  .photo-thumb { width: 84px; height: 84px; }
+  .remove-btn { width: 22px; height: 22px; top: 4px; right: 4px; font-size: 0.65rem; }
+
+  .album-box { padding: 14px; }
+  .toggle-text { font-size: 1rem; }
+
+  .success-banner { padding: 24px 18px; }
+  .success-actions { flex-direction: column; width: 100%; }
+  .success-actions .btn { width: 100%; justify-content: center; }
 }
 </style>

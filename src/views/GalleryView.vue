@@ -540,4 +540,37 @@ function formatDate(ts) {
 .lightbox-leave-active { transition: opacity 0.35s ease; }
 .lightbox-enter-from,
 .lightbox-leave-to     { opacity: 0; }
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .top-nav { padding: 14px 18px; }
+  .page-container { padding: 28px 14px 56px; }
+  .page-header { margin-bottom: 28px; }
+  .section { margin-bottom: 36px; }
+
+  /* 2 columns, like desktop's masonry but smaller */
+  .gallery-grid { columns: 2; gap: 10px; }
+  .gallery-item { margin-bottom: 10px; }
+
+  .album-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 14px; }
+  .album-title { font-size: 0.85rem; }
+  .album-meta { font-size: 0.64rem; }
+
+  .lightbox { padding: 12px; }
+  .lightbox-close { top: 12px; right: 12px; width: 36px; height: 36px; }
+  .lightbox-nav { width: 38px; height: 38px; font-size: 1.3rem; }
+  .lightbox-nav.prev { left: 8px; }
+  .lightbox-nav.next { right: 8px; }
+  .lightbox-img { max-height: 62vh; }
+  .lightbox-caption { font-size: 1.05rem; }
+}
+
+/* Phones have no "hover", so show captions all the time */
+@media (hover: none) {
+  .gallery-overlay { transform: translateY(0); padding: 26px 10px 10px; }
+  .overlay-caption { font-size: 0.8rem; margin-bottom: 2px; }
+  .overlay-guest { font-size: 0.6rem; }
+  .gallery-item:hover .gallery-img { transform: none; }
+}
+
 </style>

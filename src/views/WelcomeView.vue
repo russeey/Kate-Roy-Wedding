@@ -3,22 +3,19 @@
   <div class="welcome-page">
 
     <!-- ── Scroll / Letter ── -->
-    <div class="scroll-wrap" :class="{ unrolled: scrollOpen }">
-      <!-- Decorative scroll rolls -->
+    <div
+      class="scroll-wrap"
+      :class="{ unrolled: scrollOpen }"
+      :style="{ '--open-ms': OPEN_MS + 'ms' }"
+    >
+      <!-- Top roll (moves UP as the scroll opens) -->
       <div class="scroll-roll top-roll" />
-      <div class="scroll-roll bottom-roll" />
 
-      <!-- Scroll body -->
-      <div class="scroll-body">
-        <!-- Wax seal (before open) -->
-        <div class="seal" v-if="!scrollOpen" @click="openScroll">
-          <span class="seal-initials">K&R</span>
-          <div class="seal-ring" />
-        </div>
+      <!-- Paper: its height grows from 0, so it opens from the middle -->
+      <div ref="paperRef" class="scroll-paper">
+        <div ref="innerRef" class="scroll-inner">
 
-        <!-- Letter content (after open) -->
-        <transition name="letter">
-          <div v-if="scrollOpen" class="letter-content">
+          <div class="letter-content" :class="{ visible: scrollOpen }">
             <div class="letter-header">
               <p class="letter-date">{{ weddingDate }}</p>
             </div>
@@ -50,17 +47,34 @@
                 <span>📷 Share Your Memories</span>
               </router-link>
               <router-link to="/gallery" class="btn">
-                <span>🌸 View the Gallery</span>
+                <span>🌿 View the Gallery</span>
               </router-link>
             </div>
           </div>
-        </transition>
 
-        <!-- Tap-to-open hint -->
-        <div class="seal-hint" v-if="!scrollOpen">
-          <p>Tap the seal to open your invitation</p>
-          <div class="hint-arrow">↓</div>
         </div>
+      </div>
+
+      <!-- Bottom roll (moves DOWN as the scroll opens) -->
+      <div class="scroll-roll bottom-roll" />
+
+      <!-- Wax seal sits across the closed scroll -->
+      <button
+        v-if="!scrollOpen"
+        type="button"
+        class="seal"
+        :class="{ breaking: sealBreaking }"
+        aria-label="Open the invitation"
+        @click="openScroll"
+      >
+        <span class="seal-initials">K&amp;R</span>
+        <span class="seal-ring" />
+      </button>
+
+      <!-- Tap-to-open hint -->
+      <div v-if="!scrollOpen" class="seal-hint" :class="{ fade: sealBreaking }">
+        <p>Tap the seal to open your invitation</p>
+        <div class="hint-arrow">↑</div>
       </div>
     </div>
 
@@ -68,14 +82,58 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 
-const scrollOpen = ref(false)
-const weddingDate = 'A Day to Remember'
+// ─── Tweak the speed here ───────────────────────────────────────
+const OPEN_MS = 2200   // how long the scroll takes to unroll (bigger = slower)
+const SEAL_MS = 450    // how long the wax seal takes to break away
+// ────────────────────────────────────────────────────────────────
 
-function openScroll() {
-  scrollOpen.value = true
+const weddingDate  = 'A Day to Remember'
+const scrollOpen   = ref(false)
+const sealBreaking = ref(false)
+const paperRef     = ref(null)
+const innerRef     = ref(null)
+
+let isOpening = false
+const timers = []
+
+function wait(ms) {
+  return new Promise(resolve => timers.push(setTimeout(resolve, ms)))
 }
+
+async function openScroll() {
+  if (isOpening || scrollOpen.value) return
+  isOpening = true
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  // 1. The wax seal breaks away
+  sealBreaking.value = true
+  await wait(reduceMotion ? 0 : SEAL_MS)
+
+  const paper = paperRef.value
+
+  if (reduceMotion) {
+    scrollOpen.value = true
+    paper.style.height = 'auto'
+    return
+  }
+
+  // 2. Measure how tall the letter needs to be
+  const targetHeight = innerRef.value.offsetHeight
+
+  // 3. Rolls start turning, paper grows from the middle
+  scrollOpen.value = true
+  paper.getBoundingClientRect()            // make sure the browser has the 0px start
+  paper.style.height = targetHeight + 'px'
+
+  // 4. When finished, let the height be automatic again (keeps it responsive)
+  await wait(OPEN_MS + 50)
+  paper.style.height = 'auto'
+}
+
+onBeforeUnmount(() => timers.forEach(clearTimeout))
 </script>
 
 <style scoped>
@@ -97,11 +155,13 @@ function openScroll() {
 .scroll-wrap {
   position: relative;
   width: min(680px, 94vw);
-  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease: cubic-bezier(0.45, 0.05, 0.25, 1);
 }
 
-/* Decorative wooden rolls at top and bottom */
+/* ── Rolls ── */
 .scroll-roll {
+  position: relative;
+  z-index: 3;
   width: 100%;
   height: 28px;
   background:
@@ -109,26 +169,55 @@ function openScroll() {
       #7f9670 0%, #b9c8ab 30%, #7f9670 50%, #566b4a 80%, #7f9670 100%);
   border-radius: 14px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 2px 4px rgba(255,255,255,0.3);
-  position: relative;
-  z-index: 3;
+  overflow: hidden;
+  transition: border-radius 0.6s ease, margin-top 0.8s ease;
 }
-.top-roll { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.bottom-roll {
+/* ridges that slide while the roll turns */
+.scroll-roll::before {
+  content: '';
   position: absolute;
-  bottom: 0;
-  left: 0;
-  transform: translateY(0);
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255,255,255,0.16) 0,
+    rgba(255,255,255,0.16) 2px,
+    transparent 2px,
+    transparent 7px
+  );
+}
+
+/* Closed: the two rolls overlap and look like one rolled-up scroll */
+.bottom-roll { margin-top: -8px; }
+
+/* Open: rolls straighten out where they meet the paper */
+.unrolled .top-roll {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.unrolled .bottom-roll {
+  margin-top: 0;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.unrolled .bottom-roll {
-  transform: translateY(100%);
+/* Rolls turn in opposite directions while opening */
+.unrolled .top-roll::before {
+  animation: rollUp var(--open-ms) var(--ease) both;
 }
+.unrolled .bottom-roll::before {
+  animation: rollDown var(--open-ms) var(--ease) both;
+}
+@keyframes rollUp   { from { background-position: 0 0; } to { background-position: 0 -63px; } }
+@keyframes rollDown { from { background-position: 0 0; } to { background-position: 0 63px; } }
 
-/* Parchment body */
-.scroll-body {
+/* ── Paper (opens from the middle) ── */
+.scroll-paper {
+  position: relative;
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;        /* keeps the letter centred, so it is revealed from the middle */
   background:
     repeating-linear-gradient(
       0deg,
@@ -139,16 +228,15 @@ function openScroll() {
     linear-gradient(160deg, #fafbf7 0%, #eef2e6 50%, #f6f8f1 100%);
   border-left: 3px solid var(--sage);
   border-right: 3px solid var(--sage);
-  padding: 48px 52px;
-  min-height: 200px;
-  position: relative;
-  overflow: hidden;
+  transition: height var(--open-ms) var(--ease), box-shadow 1s ease;
+}
+.unrolled .scroll-paper {
   box-shadow:
     inset 4px 0 12px rgba(127,150,112,0.08),
     inset -4px 0 12px rgba(127,150,112,0.08),
     0 8px 48px rgba(0,0,0,0.12);
 }
-.scroll-body::before {
+.scroll-paper::before {
   content: '';
   position: absolute;
   inset: 12px;
@@ -156,32 +244,51 @@ function openScroll() {
   pointer-events: none;
 }
 
+.scroll-inner {
+  flex: none;
+  padding: 48px 52px;
+}
+
 /* ── Wax Seal ── */
 .seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 6;
   width: 100px;
   height: 100px;
+  padding: 0;
+  border: none;
   background: radial-gradient(circle at 35% 35%, #7f9670, #3f5436);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 20px auto 12px;
   cursor: pointer;
+  transform: translate(-50%, -50%);
   box-shadow:
     0 6px 24px rgba(63,84,54,0.35),
     inset 0 2px 4px rgba(225,240,210,0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
+  transition: transform 0.45s ease, box-shadow 0.3s ease, opacity 0.45s ease, filter 0.45s ease;
 }
 .seal:hover {
-  transform: scale(1.06);
+  transform: translate(-50%, -50%) scale(1.06);
   box-shadow: 0 10px 32px rgba(63,84,54,0.45), inset 0 2px 4px rgba(225,240,210,0.2);
+}
+.seal:focus-visible { outline: 3px solid var(--sage-light); outline-offset: 4px; }
+/* the seal "breaks" when tapped */
+.seal.breaking {
+  transform: translate(-50%, -50%) scale(1.35) rotate(10deg);
+  opacity: 0;
+  filter: blur(2px);
+  pointer-events: none;
 }
 .seal-ring {
   position: absolute;
   inset: 6px;
   border-radius: 50%;
   border: 2px solid rgba(230,242,220,0.3);
+  pointer-events: none;
 }
 .seal-initials {
   font-family: var(--font-display);
@@ -192,14 +299,19 @@ function openScroll() {
 }
 
 .seal-hint {
+  position: absolute;
+  top: calc(100% + 46px);
+  left: 0;
+  right: 0;
   text-align: center;
-  margin-top: 24px;
   font-family: var(--font-sans);
   font-size: 0.78rem;
   color: var(--ink-soft);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  transition: opacity 0.4s ease;
 }
+.seal-hint.fade { opacity: 0; }
 .hint-arrow {
   font-size: 1.4rem;
   color: var(--sage);
@@ -207,7 +319,7 @@ function openScroll() {
 }
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(6px); }
+  50%       { transform: translateY(-6px); }
 }
 
 /* ── Letter Content ── */
@@ -217,6 +329,14 @@ function openScroll() {
   align-items: center;
   gap: 20px;
   text-align: center;
+  /* hidden until the scroll starts to open (also removes the links from tab order) */
+  visibility: hidden;
+  opacity: 0;
+}
+.letter-content.visible {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 1.2s ease 0.6s;
 }
 
 .letter-date {
@@ -272,7 +392,36 @@ function openScroll() {
   margin-top: 12px;
 }
 
-/* Transition for letter content */
-.letter-enter-active { transition: opacity 0.9s ease 0.4s, transform 0.9s ease 0.4s; }
-.letter-enter-from   { opacity: 0; transform: translateY(20px); }
+/* ── Mobile ── */
+@media (max-width: 520px) {
+  .welcome-page { padding: 24px 12px; min-height: 100dvh; }
+  .scroll-wrap { width: 100%; }
+  .scroll-roll { height: 22px; border-radius: 11px; }
+  .bottom-roll { margin-top: -6px; }
+  .scroll-inner { padding: 32px 22px; }
+  .scroll-paper::before { inset: 8px; }
+
+  .seal { width: 84px; height: 84px; }
+  .seal-initials { font-size: 1.1rem; }
+  .seal-hint { font-size: 0.7rem; top: calc(100% + 40px); }
+
+  .letter-content { gap: 16px; }
+  .letter-names { font-size: clamp(2rem, 11vw, 2.6rem); }
+  .letter-body { font-size: 1.05rem; line-height: 1.75; }
+  .letter-invitation { font-size: 1rem; }
+
+  .letter-actions { flex-direction: column; width: 100%; gap: 12px; }
+  .letter-actions .btn { width: 100%; justify-content: center; }
+}
+
+/* People who prefer less motion get the letter instantly */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-paper,
+  .scroll-roll,
+  .seal,
+  .letter-content,
+  .letter-content.visible { transition: none !important; }
+  .scroll-roll::before,
+  .hint-arrow { animation: none !important; }
+}
 </style>

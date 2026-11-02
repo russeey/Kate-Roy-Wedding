@@ -392,7 +392,28 @@ onBeforeUnmount(() => { document.body.style.overflow = '' })
 .lightbox-enter-from,
 .lightbox-leave-to     { opacity: 0; }
 
-@media (max-width: 520px) {
-  .top-nav { padding: 16px 20px; }
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .top-nav { padding: 14px 18px; }
+  .page-container { padding: 22px 14px 56px; }
+  .back-link { margin-bottom: 20px; }
+  .page-header { margin-bottom: 28px; }
+
+  .gallery-grid { columns: 2; gap: 10px; }
+  .gallery-item { margin-bottom: 10px; }
+
+  .lightbox { padding: 12px; }
+  .lightbox-close { top: 12px; right: 12px; width: 36px; height: 36px; }
+  .lightbox-nav { width: 38px; height: 38px; font-size: 1.3rem; }
+  .lightbox-nav.prev { left: 8px; }
+  .lightbox-nav.next { right: 8px; }
+  .lightbox-img { max-height: 62vh; }
+  .lightbox-caption { font-size: 1.05rem; }
+}
+
+@media (hover: none) {
+  .gallery-overlay { transform: translateY(0); padding: 26px 10px 10px; }
+  .overlay-caption { font-size: 0.8rem; }
+  .gallery-item:hover .gallery-img { transform: none; }
 }
 </style>
