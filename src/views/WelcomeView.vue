@@ -60,22 +60,14 @@
       <div class="scroll-roll bottom-roll" />
 
       <!-- Wax seal sits across the closed scroll -->
-      <button
+      <div
         v-if="!scrollOpen"
-        type="button"
         class="seal"
         :class="{ breaking: sealBreaking }"
-        aria-label="Open the invitation"
-        @click="openScroll"
+        aria-hidden="true"
       >
         <span class="seal-initials">K&amp;R</span>
         <span class="seal-ring" />
-      </button>
-
-      <!-- Tap-to-open hint -->
-      <div v-if="!scrollOpen" class="seal-hint" :class="{ fade: sealBreaking }">
-        <p>Tap the seal to open your invitation</p>
-        <div class="hint-arrow">↑</div>
       </div>
     </div>
 
@@ -122,6 +114,7 @@ import { ref, computed, onMounted, nextTick, onBeforeUnmount } from 'vue'
 // ─── Tweak the speed here ───────────────────────────────────────
 const OPEN_MS = 2200   // how long the scroll takes to unroll (bigger = slower)
 const SEAL_MS = 450    // how long the wax seal takes to break away
+const MODAL_EXIT_MS = 500   // pause so the name pop-up can fade out first
 // ────────────────────────────────────────────────────────────────
 
 const weddingDate  = 'A Day to Remember'
@@ -140,10 +133,12 @@ const greetingName  = computed(() => guestName.value || 'guest')
 function confirmName() {
   guestName.value = nameDraft.value.replace(/\s+/g, ' ').trim()
   showNameModal.value = false
+  openScroll()            // the scroll now opens by itself
 }
 function skipName() {
   guestName.value = ''
   showNameModal.value = false
+  openScroll()            // the scroll now opens by itself
 }
 
 onMounted(() => nextTick(() => nameInput.value?.focus()))
@@ -160,6 +155,9 @@ async function openScroll() {
   isOpening = true
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  // 0. Let the name pop-up fade away first
+  await wait(reduceMotion ? 0 : MODAL_EXIT_MS)
 
   // 1. The wax seal breaks away
   sealBreaking.value = true
@@ -317,19 +315,13 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transform: translate(-50%, -50%);
   box-shadow:
     0 6px 24px rgba(63,84,54,0.35),
     inset 0 2px 4px rgba(225,240,210,0.2);
   transition: transform 0.45s ease, box-shadow 0.3s ease, opacity 0.45s ease, filter 0.45s ease;
 }
-.seal:hover {
-  transform: translate(-50%, -50%) scale(1.06);
-  box-shadow: 0 10px 32px rgba(63,84,54,0.45), inset 0 2px 4px rgba(225,240,210,0.2);
-}
-.seal:focus-visible { outline: 3px solid var(--sage-light); outline-offset: 4px; }
-/* the seal "breaks" when tapped */
+/* the seal "breaks" just before the scroll opens */
 .seal.breaking {
   transform: translate(-50%, -50%) scale(1.35) rotate(10deg);
   opacity: 0;
@@ -349,30 +341,6 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
   color: #f3f8ec;
   letter-spacing: 0.06em;
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-
-.seal-hint {
-  position: absolute;
-  top: calc(100% + 46px);
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-family: var(--font-sans);
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transition: opacity 0.4s ease;
-}
-.seal-hint.fade { opacity: 0; }
-.hint-arrow {
-  font-size: 1.4rem;
-  color: var(--sage);
-  animation: bounce 1.4s ease-in-out infinite;
-}
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-6px); }
 }
 
 /* ── Letter Content ── */
@@ -577,7 +545,6 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
 
   .seal { width: 84px; height: 84px; }
   .seal-initials { font-size: 1.1rem; }
-  .seal-hint { font-size: 0.7rem; top: calc(100% + 40px); }
 
   .modal-card { padding: 32px 22px 24px; }
   .modal-title { font-size: 1.3rem; }
@@ -602,7 +569,6 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
   .modal-leave-active,
   .modal-enter-active .modal-card,
   .modal-leave-active .modal-card { transition: none !important; }
-  .scroll-roll::before,
-  .hint-arrow { animation: none !important; }
+  .scroll-roll::before { animation: none !important; }
 }
 </style>
