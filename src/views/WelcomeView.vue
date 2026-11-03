@@ -7,6 +7,7 @@
       class="scroll-wrap"
       :class="{ unrolled: scrollOpen }"
       :style="{ '--open-ms': OPEN_MS + 'ms' }"
+      :inert="showNameModal"
     >
       <!-- Top roll (moves UP as the scroll opens) -->
       <div class="scroll-roll top-roll" />
@@ -27,7 +28,7 @@
             <div class="ornament"><span>✦</span></div>
 
             <p class="letter-body">
-              Welcome, dear guest.<br /><br />
+              Welcome, dear <span class="guest-name">{{ greetingName }}</span>.<br /><br />
               Today, two hearts become one — and we are so glad
               you are here to witness and celebrate this beautiful
               chapter of our love story.<br /><br />
@@ -78,11 +79,45 @@
       </div>
     </div>
 
+    <!-- ── Name overlay (appears first) ── -->
+    <transition name="modal">
+      <div v-if="showNameModal" class="modal-backdrop" @keydown.esc="skipName">
+        <form
+          class="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="name-title"
+          @submit.prevent="confirmName"
+        >
+          <p class="modal-eyebrow">Kate &amp; Roy’s Wedding</p>
+          <div class="ornament"><span>✦</span></div>
+          <h2 id="name-title" class="modal-title">What’s your name?</h2>
+          <p class="modal-sub">So we can greet you properly.</p>
+
+          <label class="sr-only" for="guest-name-input">Your name</label>
+          <input
+            id="guest-name-input"
+            ref="nameInput"
+            v-model="nameDraft"
+            type="text"
+            class="modal-input"
+            placeholder="Enter your name"
+            maxlength="40"
+            autocomplete="name"
+            autocapitalize="words"
+          />
+
+          <button type="submit" class="btn btn-filled modal-btn"><span>Continue</span></button>
+          <button type="button" class="modal-skip" @click="skipName">Skip for now</button>
+        </form>
+      </div>
+    </transition>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, nextTick, onBeforeUnmount } from 'vue'
 
 // ─── Tweak the speed here ───────────────────────────────────────
 const OPEN_MS = 2200   // how long the scroll takes to unroll (bigger = slower)
@@ -94,6 +129,24 @@ const scrollOpen   = ref(false)
 const sealBreaking = ref(false)
 const paperRef     = ref(null)
 const innerRef     = ref(null)
+
+// ── Guest name overlay ──
+const showNameModal = ref(true)
+const nameInput     = ref(null)
+const nameDraft     = ref('')
+const guestName     = ref('')
+const greetingName  = computed(() => guestName.value || 'guest')
+
+function confirmName() {
+  guestName.value = nameDraft.value.replace(/\s+/g, ' ').trim()
+  showNameModal.value = false
+}
+function skipName() {
+  guestName.value = ''
+  showNameModal.value = false
+}
+
+onMounted(() => nextTick(() => nameInput.value?.focus()))
 
 let isOpening = false
 const timers = []
@@ -392,6 +445,127 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
   margin-top: 12px;
 }
 
+/* ── Name in the greeting ── */
+.guest-name {
+  font-style: normal;
+  font-family: var(--font-display);
+  font-size: 0.88em;
+  letter-spacing: 0.06em;
+  color: var(--sage-dark);
+  overflow-wrap: anywhere;
+}
+
+/* ── Name overlay ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(34, 46, 28, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+.modal-card {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 40px 34px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  background: linear-gradient(160deg, #fafbf7 0%, #eef2e6 50%, #f6f8f1 100%);
+  border: 1px solid var(--sage);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+.modal-card::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(127,150,112,0.25);
+  pointer-events: none;
+}
+.modal-card .ornament { width: 100%; font-size: 1.1rem; }
+.modal-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sage-dark);
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+.modal-sub {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+}
+.modal-input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 13px 16px;
+  font-family: var(--font-body);
+  font-size: 1.15rem;           /* 16px+ stops iPhones zooming in */
+  text-align: center;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid rgba(127,150,112,0.4);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.modal-input:focus {
+  border-color: var(--sage);
+  box-shadow: 0 0 0 3px rgba(127,150,112,0.18);
+}
+.modal-btn { width: 100%; justify-content: center; margin-top: 6px; }
+.modal-skip {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.3s;
+}
+.modal-skip:hover { color: var(--sage-dark); }
+
+/* pop in / out */
+.modal-enter-active,
+.modal-leave-active { transition: opacity 0.4s ease; }
+.modal-enter-active .modal-card { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease; }
+.modal-leave-active .modal-card { transition: transform 0.35s ease, opacity 0.3s ease; }
+.modal-enter-from,
+.modal-leave-to { opacity: 0; }
+.modal-enter-from .modal-card { transform: scale(0.88) translateY(18px); opacity: 0; }
+.modal-leave-to .modal-card   { transform: scale(0.96) translateY(-8px); opacity: 0; }
+
 /* ── Mobile ── */
 @media (max-width: 520px) {
   .welcome-page { padding: 24px 12px; min-height: 100dvh; }
@@ -404,6 +578,9 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
   .seal { width: 84px; height: 84px; }
   .seal-initials { font-size: 1.1rem; }
   .seal-hint { font-size: 0.7rem; top: calc(100% + 40px); }
+
+  .modal-card { padding: 32px 22px 24px; }
+  .modal-title { font-size: 1.3rem; }
 
   .letter-content { gap: 16px; }
   .letter-names { font-size: clamp(2rem, 11vw, 2.6rem); }
@@ -420,7 +597,11 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
   .scroll-roll,
   .seal,
   .letter-content,
-  .letter-content.visible { transition: none !important; }
+  .letter-content.visible,
+  .modal-enter-active,
+  .modal-leave-active,
+  .modal-enter-active .modal-card,
+  .modal-leave-active .modal-card { transition: none !important; }
   .scroll-roll::before,
   .hint-arrow { animation: none !important; }
 }
